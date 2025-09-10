@@ -1,76 +1,60 @@
 package dev.vortsu.controllers;
 
 import dev.vortsu.dto.Student;
-import jakarta.annotation.PostConstruct;
+import dev.vortsu.repositories.StudentRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("api/base")
 public class BaseController {
 
-    private Long counter = 0L;
+    private final StudentRepository studentRepository;
 
-    private Long genetareId(){ return counter++ ;}
-
-    private final List<Student> students = new ArrayList<>();
-
-    @PostConstruct
-    private void init(){
-        students.add(new Student(0L,"user1","VM","+7"));
-        students.add(new Student(1L,"user2","VM","+8"));
-        students.add(new Student(2L,"user3","dM","+99"));
+    @Autowired
+    public BaseController(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
     }
 
-    @PostMapping(value ="Students", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Student createStudent (@RequestBody Student newStudent){return addStudent(newStudent);}
+    // Создание нового студента
+    @PostMapping(value = "students", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Student createStudent(@RequestBody Student newStudent) {
+        return studentRepository.save(newStudent);
+    }
 
+    // Обновление существующего студента
     @PutMapping(value = "students", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Student updateStudent (@RequestBody Student changingStudent){
-        return updateStudentInterval(changingStudent);
-    }
-
-    private Student updateStudentInterval(Student student){
-        if (student.getId() == null){
-            throw new RuntimeException("id of changing student cannot be null");
+    public Student updateStudent(@RequestBody Student changingStudent) {
+        if (changingStudent.getId() == null) {
+            throw new RuntimeException("ID изменяемого студента не может быть null");
         }
-
-        Student changingStudent = students.stream()
-                .filter(el -> Objects.equals(el.getId(), student.getId()))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("student with id " + student.getId() + "was not found"));
-
-        changingStudent.setFio(student.getFio());
-        changingStudent.setGroup(student.getGroup());
-        changingStudent.setPhoneNumber(student.getPhoneNumber());
-
-        return student;
-
+        return studentRepository.save(changingStudent);
     }
-    private Student addStudent(Student student){
-        student.setId(genetareId());
-        students.add(student);
-        return student;
-    }
+
+    // Получение всех студентов
     @GetMapping("getAllStudents")
-    public List<Student>getAllStudents(){
-        return students;
+    public List<Student> getAllStudents() {
+        return (List<Student>) studentRepository.findAll();
     }
+
+    // Простой тестовый endpoint
     @GetMapping("check")
-    public String greetJava(){
-        return "Hello world" + new Date();
+    public String greetJava() {
+        return "Hello world " + new Date();
     }
+
+    // Фильтрация студентов по группе
     @GetMapping(value = "students/filter", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Student> filterStudentsByGroup(@RequestParam(value = "group") String group) {
-        List<Student> filteredStudents = students.stream()
-                .filter(el -> el.getGroup().equals(group))
-                .collect(Collectors.toList());  // ← Собираем ВСЕХ в список!
+        List<Student> allStudents = (List<Student>) studentRepository.findAll();
+        List<Student> filteredStudents = allStudents.stream()
+                .filter(student -> student.getGroup().equals(group))
+                .collect(Collectors.toList());
 
         if (filteredStudents.isEmpty()) {
             throw new RuntimeException("Студенты в группе '" + group + "' не найдены");
@@ -78,20 +62,21 @@ public class BaseController {
 
         return filteredStudents;
     }
-    @GetMapping(value ="students/{id}", produces = MediaType.APPLICATION_JSON_VALUE )
-    public Student getStudentById(@PathVariable("id")Long id){
-        return students.stream()
-                .filter(el->el.getId().equals(id))
-                .findFirst()
-                .orElseThrow(()->new RuntimeException("student with id:"+ id + "was not found"));
-    }
-   @DeleteMapping(value = "students/{id}",produces = MediaType.APPLICATION_JSON_VALUE)
-            public Long deleteStudent(@PathVariable("id")Long id){
-        return removeStudent(id);
-    }
-    private Long removeStudent(Long id){
-        students.removeIf(el ->el.getId().equals(id));
-        return id;
+
+    // Получение студента по ID
+    @GetMapping(value = "students/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Student getStudentById(@PathVariable("id") Long id) {
+        return studentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Студент с id: " + id + " не найден"));
     }
 
+    // Удаление студента по ID
+    @DeleteMapping(value = "students/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public String deleteStudent(@PathVariable("id") Long id) {
+        if (!studentRepository.existsById(id)) {
+            throw new RuntimeException("Студент с id: " + id + " не найден");
+        }
+        studentRepository.deleteById(id);
+        return "Студент с id " + id + " успешно удален";
+    }
 }

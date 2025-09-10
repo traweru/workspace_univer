@@ -1,8 +1,14 @@
 package dev.vortsu.dto;
+import jakarta.persistence.*;
 
+@Entity
+@Table(name="students")
 public class Student {
+     @Id
+     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String fio;
+    @Column(name = "group_of_students")
     private String group;
     private String phoneNumber;
 
@@ -15,13 +21,11 @@ public class Student {
         this.group = group;
         this.phoneNumber = phoneNumber;
     }
-
     public Student(String fio, String group, String phoneNumber) {
         this.fio = fio;
         this.group = group;
         this.phoneNumber = phoneNumber;
     }
-
     // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
