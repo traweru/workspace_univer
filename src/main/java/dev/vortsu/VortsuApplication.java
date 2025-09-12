@@ -1,20 +1,22 @@
 package dev.vortsu;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class VortsuApplication {
+public class VortsuApplication implements CommandLineRunner {
 
-	private static Initializer initiator;
 	@Autowired
-	public void setInitiatorLoader(Initializer initiator){
-		VortsuApplication.initiator = initiator;
-	}
+	private Initializer initializer;
+
 	public static void main(String[] args) {
 		SpringApplication.run(VortsuApplication.class, args);
-		initiator.initial();
 	}
 
+	@Override
+	public void run(String... args) throws Exception {
+		initializer.initial();
+	}
 }
