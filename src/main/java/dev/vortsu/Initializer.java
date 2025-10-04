@@ -2,9 +2,9 @@ package dev.vortsu;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import dev.vortsu.enitity.User;
-import dev.vortsu.enitity.Password;
-import dev.vortsu.enitity.Role;
+import dev.vortsu.entity.User;
+import dev.vortsu.entity.Password;
+import dev.vortsu.entity.Role;
 import dev.vortsu.repositories.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 

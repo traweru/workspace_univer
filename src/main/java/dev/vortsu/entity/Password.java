@@ -1,4 +1,4 @@
-package dev.vortsu.enitity;
+package dev.vortsu.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
