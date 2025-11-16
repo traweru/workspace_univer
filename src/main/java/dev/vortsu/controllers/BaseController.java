@@ -4,6 +4,7 @@ import dev.vortsu.dto.Student;
 import dev.vortsu.repositories.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize; // ← добавили
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("api/base")
+@PreAuthorize("hasAuthority('ADMIN')") // ← ВСЕ методы доступны ТОЛЬКО админу
 public class BaseController {
 
     private final StudentRepository studentRepository;
@@ -36,20 +38,23 @@ public class BaseController {
         return studentRepository.save(changingStudent);
     }
 
-    // Получение всех студентов
+    // Получение всех студентов — разрешим и студентам!
     @GetMapping("getAllStudents")
+    @PreAuthorize("permitAll()") // ← студенты тоже могут читать
     public List<Student> getAllStudents() {
         return (List<Student>) studentRepository.findAll();
     }
 
     // Простой тестовый endpoint
     @GetMapping("check")
+    @PreAuthorize("permitAll()")
     public String greetJava() {
         return "Hello world " + new Date();
     }
 
-    // Фильтрация студентов по группе
+    // Фильтрация студентов по группе — разрешим всем
     @GetMapping(value = "students/filter", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("permitAll()")
     public List<Student> filterStudentsByGroup(@RequestParam(value = "group") String group) {
         List<Student> allStudents = (List<Student>) studentRepository.findAll();
         List<Student> filteredStudents = allStudents.stream()
@@ -63,8 +68,9 @@ public class BaseController {
         return filteredStudents;
     }
 
-    // Получение студента по ID
+    // Получение студента по ID — разрешим всем
     @GetMapping(value = "students/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("permitAll()")
     public Student getStudentById(@PathVariable("id") Long id) {
         return studentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Студент с id: " + id + " не найден"));
