@@ -11,12 +11,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.http.HttpStatus;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import javax.sql.DataSource;
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -26,18 +27,19 @@ public class SecurityConfig {
     @Autowired
     private DataSource dataSource;
 
+
     @Autowired
     public void configAuthentication(AuthenticationManagerBuilder auth) throws Exception {
         auth.jdbcAuthentication()
                 .dataSource(dataSource)
                 .passwordEncoder(new BCryptPasswordEncoder())
                 .usersByUsernameQuery(
-                        "select username, p.password as password, enable " +
-                                "from users as u " +
-                                "inner join passwords as p on u.password_id = p.id " +
-                                "where username=?")
+                        "SELECT u.username, p.password, u.enable " +
+                                "FROM users u " +
+                                "INNER JOIN passwords p ON u.password_id = p.id " +
+                                "WHERE u.username=?")
                 .authoritiesByUsernameQuery(
-                        "select username, role from users where username=?");
+                        "SELECT username, role FROM users WHERE username=?");
     }
 
     @Bean
@@ -48,32 +50,50 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/login/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/base/students/**").hasAuthority("STUDENT")
+                        .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/api/students/**").hasAnyAuthority("STUDENT", "ADMIN")
+                        .requestMatchers("/api/teachers/**").hasAnyAuthority("TEACHER", "ADMIN")
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                         .anyRequest().authenticated()
                 )
-                .httpBasic(httpBasic -> httpBasic
-                        .authenticationEntryPoint(new AuthenticationEntryPoint() {
-                            @Override
-                            public void commence(HttpServletRequest request, HttpServletResponse response,
-                                                 AuthenticationException authException) {
-                                response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                            }
-                        })
-                )
-                .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(request -> {
-                    var corsConfig = new org.springframework.web.cors.CorsConfiguration();
-                    corsConfig.setAllowedOriginPatterns(java.util.List.of("http://localhost:*"));
-                    corsConfig.setAllowedMethods(java.util.List.of("*"));
-                    corsConfig.setAllowedHeaders(java.util.List.of("*"));
-                    corsConfig.setAllowCredentials(true);
-                    return corsConfig;
-                }));
+                .formLogin(form -> form.disable())
+                .httpBasic(httpBasic -> httpBasic.disable());
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5173",  // Vite dev server
+                "http://localhost:3000",  // Create React App
+                "http://127.0.0.1:5173"   // Alternative localhost
+        ));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "Accept",
+                "Origin",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"
+        ));
+        configuration.setExposedHeaders(Arrays.asList(
+                "Access-Control-Allow-Origin",
+                "Access-Control-Allow-Credentials"
+        ));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean

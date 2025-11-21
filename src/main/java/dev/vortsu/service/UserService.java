@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class UserService {
 
     @Autowired
@@ -24,23 +25,40 @@ public class UserService {
 
     @Transactional
     public User registerUser(RegistrationRequest request) {
-        // Проверяем, нет ли уже пользователя с таким username
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new RuntimeException("Username already exists");
+        try {
+            System.out.println("=== REGISTRATION START ===");
+            System.out.println("Request: " + request.getUsername() + ", " + request.getEmail());
+
+            if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+                throw new RuntimeException("Username already exists");
+            }
+
+            Password password = new Password();
+            password.setPassword(passwordEncoder.encode(request.getPassword()));
+            Password savedPassword = passwordRepository.save(password);
+
+            User user = new User();
+            user.setUsername(request.getUsername());
+            user.setRole(request.getRole());
+            user.setPassword(savedPassword);
+            user.setEnable(true);
+
+            User savedUser = userRepository.save(user);
+            userRepository.flush(); // ← принудительно сохраняем в БД
+            System.out.println("USER FLUSHED TO DB: " + savedUser.getId());
+
+            System.out.println("=== REGISTRATION SUCCESS ===");
+            System.out.println("User ID: " + savedUser.getId());
+            System.out.println("Username: " + savedUser.getUsername());
+
+
+            return savedUser;
+
+        } catch (Exception e) {
+            System.out.println("=== REGISTRATION ERROR ===");
+            System.out.println("Error: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-
-        // Создаем и сохраняем пароль
-        Password password = new Password();
-        password.setPassword(passwordEncoder.encode(request.getPassword()));
-        Password savedPassword = passwordRepository.save(password);
-
-        // Создаем пользователя
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setRole(request.getRole());
-        user.setPassword(savedPassword);
-        user.setEnable(true);
-
-        return userRepository.save(user);
     }
 }
