@@ -25,12 +25,12 @@ public class Initializer {
     @PostConstruct
     public void initial() {
         if (userRepository.count() == 0) {
-            // Создаем пароль
+
             Password password = new Password();
             password.setPassword(passwordEncoder.encode("1234"));
             Password savedPassword = passwordRepository.save(password);
 
-            // Создаем пользователя с помощью сеттеров
+
             User student = new User();
             student.setUsername("student");
             student.setRole(Role.STUDENT);

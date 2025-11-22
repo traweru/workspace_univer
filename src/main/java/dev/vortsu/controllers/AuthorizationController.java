@@ -74,7 +74,7 @@ public class AuthorizationController {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Генерируем JWT токен
+
             String jwtToken = jwtTokenProvider.generateToken(authentication);
 
             String roles = authentication.getAuthorities().stream()
@@ -86,7 +86,7 @@ public class AuthorizationController {
             response.put("username", authentication.getName());
             response.put("roles", roles);
             response.put("authenticated", true);
-            response.put("token", jwtToken); // Добавляем токен в ответ
+            response.put("token", jwtToken);
             response.put("type", "Bearer");
 
             System.out.println("=== LOGIN SUCCESSFUL ===");

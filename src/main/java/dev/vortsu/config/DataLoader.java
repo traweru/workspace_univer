@@ -31,10 +31,10 @@ public class DataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Создаем тестовых пользователей
+
         createTestUsers();
 
-        // Создаем тестовых студентов
+
         createTestStudents();
     }
 
@@ -42,10 +42,10 @@ public class DataLoader implements CommandLineRunner {
         if (userRepository.count() == 0) {
             System.out.println("Creating test users...");
 
-            // Пароль для всех тестовых пользователей: "password"
+
             String encodedPassword = passwordEncoder.encode("password");
 
-            // Создаем пароли
+
             Password adminPassword = new Password();
             adminPassword.setPassword(encodedPassword);
             passwordRepository.save(adminPassword);
@@ -58,7 +58,7 @@ public class DataLoader implements CommandLineRunner {
             teacherPassword.setPassword(encodedPassword);
             passwordRepository.save(teacherPassword);
 
-            // Создаем пользователей
+
             User admin = new User();
             admin.setUsername("admin");
             admin.setPassword(adminPassword);
