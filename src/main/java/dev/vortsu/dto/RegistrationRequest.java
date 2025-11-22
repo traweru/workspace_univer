@@ -1,20 +1,11 @@
 package dev.vortsu.dto;
 
-import dev.vortsu.entity.Role;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.Data;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 public class RegistrationRequest {
     private String username;
-    private String password;
     private String email;
-    private String firstName;
-    private String lastName;
-    private Role role;
+    private String password;
+    private String role; // Оставляем как String для гибкости
 }

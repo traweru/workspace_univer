@@ -1,17 +1,11 @@
 package dev.vortsu.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @Entity
 @Table(name = "users")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,14 +14,12 @@ public class User {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
-
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "password_id", referencedColumnName = "id")
     private Password password;
 
-    @Column(nullable = false)
-    private Boolean enable;
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    private boolean enable = true;
 }
